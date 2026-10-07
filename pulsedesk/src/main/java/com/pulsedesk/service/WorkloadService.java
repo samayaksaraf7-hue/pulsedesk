@@ -16,25 +16,39 @@ public class WorkloadService {
 
     private final UserRepository userRepository;
 
-    public WorkloadService(UserRepository userRepository) {
+    public WorkloadService(
+            UserRepository userRepository) {
+
         this.userRepository = userRepository;
     }
 
-    @Cacheable(value = "workloads", key = "'all'")
+    @Cacheable(
+            value = "workloads",
+            key = "#userEmail"
+    )
     @Transactional(readOnly = true)
-    public List<WorkloadResponse> getAllWorkloads() {
+    public List<WorkloadResponse> getWorkloadsForUser(
+            String userEmail) {
 
         System.out.println(
-                "DATABASE HIT: Loading workloads from PostgreSQL"
+                "DATABASE HIT: Loading workload for authenticated user"
         );
 
-        return userRepository.findAll()
-                .stream()
-                .map(this::toWorkloadResponse)
-                .toList();
+        User user =
+                userRepository.findByEmail(userEmail)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "User not found"
+                                )
+                        );
+
+        return List.of(
+                toWorkloadResponse(user)
+        );
     }
 
-    private WorkloadResponse toWorkloadResponse(User user) {
+    private WorkloadResponse toWorkloadResponse(
+            User user) {
 
         int workloadHours =
                 user.getWorkloadHours() != null
@@ -55,17 +69,23 @@ public class WorkloadService {
             workloadStatus = "OVERLOADED";
         }
 
-        WorkloadResponse response = new WorkloadResponse();
+        WorkloadResponse response =
+                new WorkloadResponse();
 
         response.setUserId(user.getId());
         response.setName(user.getName());
-        response.setWorkloadHours(workloadHours);
+        response.setWorkloadHours(
+                workloadHours
+        );
+
         response.setMaxCapacityHours(
                 DEFAULT_MAX_CAPACITY_HOURS
         );
+
         response.setWorkloadPercentage(
                 workloadPercentage
         );
+
         response.setWorkloadStatus(
                 workloadStatus
         );

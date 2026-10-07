@@ -4,11 +4,11 @@ import com.pulsedesk.dto.AssignmentResponse;
 import com.pulsedesk.entity.Issue;
 import com.pulsedesk.entity.User;
 import com.pulsedesk.exception.IssueNotFoundException;
+import com.pulsedesk.kafka.IssueEvent;
+import com.pulsedesk.kafka.IssueEventProducer;
 import com.pulsedesk.repository.IssueRepository;
 import com.pulsedesk.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,19 +21,16 @@ public class AssignmentService {
 
     private final IssueRepository issueRepository;
     private final UserRepository userRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
-
-    @Value("${app.kafka.enabled:true}")
-    private boolean kafkaEnabled;
+    private final IssueEventProducer issueEventProducer;
 
     public AssignmentService(
             IssueRepository issueRepository,
             UserRepository userRepository,
-            KafkaTemplate<String, String> kafkaTemplate) {
+            IssueEventProducer issueEventProducer) {
 
         this.issueRepository = issueRepository;
         this.userRepository = userRepository;
-        this.kafkaTemplate = kafkaTemplate;
+        this.issueEventProducer = issueEventProducer;
     }
 
     @Transactional
@@ -53,7 +50,9 @@ public class AssignmentService {
         Issue issue =
                 issueRepository.findById(issueId)
                         .orElseThrow(() ->
-                                new IssueNotFoundException(issueId)
+                                new IssueNotFoundException(
+                                        issueId
+                                )
                         );
 
         /*
@@ -66,10 +65,13 @@ public class AssignmentService {
                 .getId()
                 .equals(currentUser.getId())) {
 
-            throw new IssueNotFoundException(issueId);
+            throw new IssueNotFoundException(
+                    issueId
+            );
         }
 
         if (issue.getAssignedTo() != null) {
+
             throw new IllegalStateException(
                     "Issue is already assigned"
             );
@@ -93,7 +95,8 @@ public class AssignmentService {
                                             ? user.getWorkloadHours()
                                             : 0;
 
-                            return currentWorkload + issueHours
+                            return currentWorkload
+                                    + issueHours
                                     <= MAX_CAPACITY_HOURS;
                         })
                         .findFirst()
@@ -109,58 +112,60 @@ public class AssignmentService {
                         : 0;
 
         int newWorkload =
-                previousWorkload + issueHours;
+                previousWorkload
+                        + issueHours;
 
-        issue.setAssignedTo(selectedUser);
-        selectedUser.setWorkloadHours(newWorkload);
+        issue.setAssignedTo(
+                selectedUser
+        );
 
-        userRepository.save(selectedUser);
-        issueRepository.save(issue);
+        selectedUser.setWorkloadHours(
+                newWorkload
+        );
 
-        String eventMessage =
-                "issueId=" + issue.getId()
-                        + ", eventType=ISSUE_ASSIGNED"
-                        + ", assignedUserId="
-                        + selectedUser.getId()
-                        + ", assignedUserName="
-                        + selectedUser.getName()
-                        + ", workloadHours="
-                        + newWorkload;
+        userRepository.save(
+                selectedUser
+        );
+
+        issueRepository.save(
+                issue
+        );
 
         /*
-         * Kafka is enabled locally.
-         * Railway can disable it using
-         * APP_KAFKA_ENABLED=false.
+         * Publish through our safe event producer.
+         *
+         * Local:
+         * Kafka enabled -> event goes to Kafka.
+         *
+         * Railway:
+         * APP_KAFKA_ENABLED=false
+         * -> event is skipped immediately.
          */
-        if (kafkaEnabled) {
-            try {
-                kafkaTemplate.send(
-                        "pulsedesk.issue-events",
-                        String.valueOf(issue.getId()),
-                        eventMessage
-                ).whenComplete(
-                        (result, exception) -> {
-                            if (exception != null) {
-                                System.err.println(
-                                        "Kafka unavailable - assignment event skipped: "
-                                                + exception.getMessage()
-                                );
-                            }
-                        }
+        IssueEvent assignmentEvent =
+                new IssueEvent(
+                        issue.getId(),
+                        "ISSUE_ASSIGNED",
+                        "Issue assigned to "
+                                + selectedUser.getName()
+                                + " with workload "
+                                + newWorkload
+                                + " hours"
                 );
-            } catch (Exception exception) {
-                System.err.println(
-                        "Kafka unavailable - assignment event skipped: "
-                                + exception.getMessage()
-                );
-            }
-        }
+
+        issueEventProducer.publish(
+                assignmentEvent
+        );
 
         AssignmentResponse response =
                 new AssignmentResponse();
 
-        response.setIssueId(issue.getId());
-        response.setIssueTitle(issue.getTitle());
+        response.setIssueId(
+                issue.getId()
+        );
+
+        response.setIssueTitle(
+                issue.getTitle()
+        );
 
         response.setAssignedUserId(
                 selectedUser.getId()

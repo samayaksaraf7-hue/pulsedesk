@@ -16,7 +16,7 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
     listener:
-      auto-startup: ${KAFKA_ENABLED:true}
+      auto-startup: ${APP_KAFKA_ENABLED:true}
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -38,6 +38,9 @@ server:
   port: ${PORT:8080}
 
 app:
+  kafka:
+    enabled: ${APP_KAFKA_ENABLED:true}
+
   jwt:
     secret: ${JWT_SECRET}
     expiration: 3600000

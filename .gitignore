@@ -1,0 +1,25 @@
+# IntelliJ
+.idea/
+*.iml
+
+# Java / Maven
+**/target/
+
+# React / Node
+**/node_modules/
+**/dist/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

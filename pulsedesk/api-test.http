@@ -1,0 +1,283 @@
+### Register user
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@pulsedesk.com",
+  "password": "Password@123"
+}
+### Login User
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@pulsedesk.com",
+  "password": "Password@123"
+}
+
+### Create Issue
+POST http://localhost:8080/api/issues
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI3NjE5MywiZXhwIjoxNzkxMjc5NzkzfQ.9oP8e9O0Erte_pSM_OnthhCKXKKb2uHeSrwwBtiaW1E"
+
+{
+  "title": "Payment service is slow",
+  "description": "Customers are experiencing delays while making payments",
+  "impact": 5,
+  "urgency": 4,
+  "affectedUsers": 120,
+  "deadline": "2026-10-08",
+  "estimatedHours": 4
+}
+### Create Issue - Test Priority Engine
+POST http://localhost:8080/api/issues
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI3NjczNSwiZXhwIjoxNzkxMjgwMzM1fQ.w1i4Mfi1p-xDtu4UiGbDznV68TaXGNYBzzllXaTnq8w
+
+{
+  "title": "Production checkout failure",
+  "description": "Many customers cannot complete checkout",
+  "impact": 5,
+  "urgency": 5,
+  "affectedUsers": 250,
+  "deadline": "2026-10-07",
+  "estimatedHours": 2
+}
+
+### Create Issue - Test Safe Response
+POST http://localhost:8080/api/issues
+Content-Type: application/json
+Authorization: Beare eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI3NzE3MCwiZXhwIjoxNzkxMjgwNzcwfQ.7dnGTDUTAaohzJkdUo2WFb39IEDqm9Tdud4schjsHFw
+
+{
+  "title": "Inventory synchronization delay",
+  "description": "Inventory updates are taking too long to appear",
+  "impact": 4,
+  "urgency": 3,
+  "affectedUsers": 45,
+  "deadline": "2026-10-10",
+  "estimatedHours": 5
+}
+
+### Create Issue - Test Safe Response
+POST http://localhost:8080/api/issues
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI3NzQyNiwiZXhwIjoxNzkxMjgxMDI2fQ.pAAED67J_5OL_4X4U5DzZH-xClJT6h4IwPA-IqHPVu4
+
+{
+  "title": "Inventory synchronization delay",
+  "description": "Inventory updates are taking too long to appear",
+  "impact": 4,
+  "urgency": 3,
+  "affectedUsers": 45,
+  "deadline": "2026-10-10",
+  "estimatedHours": 5
+}
+
+### Get All Issues
+GET http://localhost:8080/api/issues
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI3ODAyMCwiZXhwIjoxNzkxMjgxNjIwfQ.qHCQWfw8ZeBzZsAFawkBo29j_3vTOA14GwVOojtNlTY
+
+### Get Issue By ID
+GET http://localhost:8080/api/issues/2
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI3ODUyMSwiZXhwIjoxNzkxMjgyMTIxfQ.ksFs33PM_TANZLa-Bnc7jBJXQXrQyvUY6llRMS0TVno
+
+### Get Non-Existing Issue - Test 404
+GET http://localhost:8080/api/issues/999
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI3OTAzNCwiZXhwIjoxNzkxMjgyNjM0fQ.diktEFpr-zckJNLZrKN3kILes4EhpIQUDlVbH41N3nw
+
+### Update Issue Status
+PATCH http://localhost:8080/api/issues/2/status
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI3OTUxNiwiZXhwIjoxNzkxMjgzMTE2fQ.o2AhqQIXQzpYi9E-ZpUUazCV8-9diAHHFbUPBgEcvUk
+
+{
+  "status": "IN_PROGRESS"
+}
+
+### Get All Workloads
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MDA2MywiZXhwIjoxNzkxMjgzNjYzfQ.jaYreFhgsJaxmnc8wWk77pypyVwsztJ1lFDHJZl3fo4
+
+### Auto Assign Issue
+POST http://localhost:8080/api/issues/2/auto-assign
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MDU0NywiZXhwIjoxNzkxMjg0MTQ3fQ.RXrXyEHGKO0gVhl77iCWWaWte7eMm-WF1Au5EscbUV8
+
+
+### Get All Workloads
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MDY2NiwiZXhwIjoxNzkxMjg0MjY2fQ.5XAGdjGo0O2bZhEbcwa5w1sU1Okzx48mudP66j17iic
+
+### Get Issue By ID
+GET http://localhost:8080/api/issues/2
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MDc4MCwiZXhwIjoxNzkxMjg0MzgwfQ.TPKYS4jZ5bZjTMWLml0fghMHQu0aBk_Yhou-pwtuS38
+
+### Register Second User
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Rahul Developer",
+  "email": "rahul@pulsedesk.com",
+  "password": "Password@123"
+}
+
+### Get All Workloads
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MTA3NSwiZXhwIjoxNzkxMjg0Njc1fQ.838JSCd9uLo4Xgg32l9h-RamqGSgfnWU4kgIv2PMNlQ
+
+### Test Least-Loaded User Assignment
+POST http://localhost:8080/api/issues/3/auto-assign
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MTE5OCwiZXhwIjoxNzkxMjg0Nzk4fQ.YtSIQjWu7AHe9WbDX-6GeGPB0UdI93V8nz6ovriSZvQ
+
+### Test Duplicate Assignment
+POST http://localhost:8080/api/issues/2/auto-assign
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MTYyOSwiZXhwIjoxNzkxMjg1MjI5fQ.TxPVDp23I6IZL2H-ebycS0mWAHFaLFS4trlzI9fZ9_c
+
+### Verify Workloads After Duplicate Assignment
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MTYyOSwiZXhwIjoxNzkxMjg1MjI5fQ.TxPVDp23I6IZL2H-ebycS0mWAHFaLFS4trlzI9fZ9_c
+
+### Resolve Issue 3 - Test Workload Release
+PATCH http://localhost:8080/api/issues/3/status
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MTYyOSwiZXhwIjoxNzkxMjg1MjI5fQ.TxPVDp23I6IZL2H-ebycS0mWAHFaLFS4trlzI9fZ9_c
+
+
+{
+  "status": "RESOLVED"
+}
+
+### Verify Workload After Resolving Issue 3
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4MTYyOSwiZXhwIjoxNzkxMjg1MjI5fQ.TxPVDp23I6IZL2H-ebycS0mWAHFaLFS4trlzI9fZ9_c
+
+
+### Verify Workload After Resolving Issue 3
+GET http://localhost:8080/api/workloads
+Authorization: Bearer YOUR_ACTUAL_TOKEN
+
+
+### Test Kafka - Create Issue
+POST http://localhost:8080/api/issues
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4NTgzMiwiZXhwIjoxNzkxMjg5NDMyfQ.EXEnuTo8yIqN_dzgEGEbZ-3T0BXwzRysUpwPKo85G2Q
+Content-Type: application/json
+
+{
+  "title": "Payment service latency",
+  "description": "Payment API response time has increased",
+  "impact": 4,
+  "urgency": 4,
+  "affectedUsers": 250,
+  "estimatedHours": 3
+}
+
+### Kafka Test - Create Issue
+POST http://localhost:8080/api/issues
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4Nzk3OCwiZXhwIjoxNzkxMjkxNTc4fQ.nj7D8avgtS77m7r3KOUEQKzT4_10ibHvHV0YPjhke2c
+Content-Type: application/json
+
+{
+  "title": "Kafka integration test",
+  "description": "Testing ISSUE_CREATED event through Kafka",
+  "impact": 4,
+  "urgency": 4,
+  "affectedUsers": 50,
+  "estimatedHours": 3
+}
+
+### Auto assign issue
+POST http://localhost:8080/api/issues/NEW_ISSUE_ID/auto-assign
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4ODYyMywiZXhwIjoxNzkxMjkyMjIzfQ.mBNI4-P0etO1QpOiFp6jxe_m5gmAWHtdYknlSHHBYpc
+
+### Auto assign issue
+POST http://localhost:8080/api/issues/11/auto-assign
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4ODYyMywiZXhwIjoxNzkxMjkyMjIzfQ.mBNI4-P0etO1QpOiFp6jxe_m5gmAWHtdYknlSHHBYpc
+
+### Get all issues
+GET http://localhost:8080/api/issues
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4ODYyMywiZXhwIjoxNzkxMjkyMjIzfQ.mBNI4-P0etO1QpOiFp6jxe_m5gmAWHtdYknlSHHBYpc
+
+### Auto assign existing unassigned issue
+POST http://localhost:8080/api/issues/1/auto-assign
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4ODYyMywiZXhwIjoxNzkxMjkyMjIzfQ.mBNI4-P0etO1QpOiFp6jxe_m5gmAWHtdYknlSHHBYpc
+
+### Kafka Test - Resolve Issue 1
+PATCH http://localhost:8080/api/issues/1/status
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI4OTUwNywiZXhwIjoxNzkxMjkzMTA3fQ.9UO8nTywCQVnlrZVGmDPw1oJvTmcTtN2ZzlPoPP76HE
+
+Content-Type: application/json
+
+{
+  "status": "RESOLVED"
+}
+
+### Redis Test - Get Workloads
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5NzY4MiwiZXhwIjoxNzkxMzAxMjgyfQ.WB0cqKiykWns-mRHnpwygQKJDGo53b9TuA5Bi9klaeI
+
+### Redis Cache Test
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5ODUxOCwiZXhwIjoxNzkxMzAyMTE4fQ.V9QQtH0qjZXbR_Kh9g70f9j6LLX5PJsiUDM8Av3aHB8
+
+### Redis Cache Test - First Call
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5ODk3NCwiZXhwIjoxNzkxMzAyNTc0fQ.LCD178CRJH5jp_oMWVsbQRaoNf3MI1jXNq56AJIfA98
+
+### Redis Cache Test - Second Call
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5ODk3NCwiZXhwIjoxNzkxMzAyNTc0fQ.LCD178CRJH5jp_oMWVsbQRaoNf3MI1jXNq56AJIfA98
+
+### Get workloads
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5OTYxOCwiZXhwIjoxNzkxMzAzMjE4fQ.cm4FpAT33OEuzL_MC2mF4wGawEniUeZmcLST4jNouHY
+
+### Get workloads
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5OTYxOCwiZXhwIjoxNzkxMzAzMjE4fQ.cm4FpAT33OEuzL_MC2mF4wGawEniUeZmcLST4jNouHY
+
+### Create issue for Redis invalidation test
+POST http://localhost:8080/api/issues
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5OTYxOCwiZXhwIjoxNzkxMzAzMjE4fQ.cm4FpAT33OEuzL_MC2mF4wGawEniUeZmcLST4jNouHY
+Content-Type: application/json
+
+{
+  "title": "Redis Cache Test Issue",
+  "description": "Testing workload cache invalidation",
+  "impact": 3,
+  "urgency": 3,
+  "affectedUsers": 20,
+  "estimatedHours": 4
+}
+
+### Auto-assign Issue 11 - Redis invalidation test
+POST http://localhost:8080/api/issues/11/auto-assign
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5OTYxOCwiZXhwIjoxNzkxMzAzMjE4fQ.cm4FpAT33OEuzL_MC2mF4wGawEniUeZmcLST4jNouHY
+
+### Check workload after assignment
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5OTYxOCwiZXhwIjoxNzkxMzAzMjE4fQ.cm4FpAT33OEuzL_MC2mF4wGawEniUeZmcLST4jNouHY
+
+### Resolve Issue 11 - Redis invalidation test
+PATCH http://localhost:8080/api/issues/11/status
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5OTYxOCwiZXhwIjoxNzkxMzAzMjE4fQ.cm4FpAT33OEuzL_MC2mF4wGawEniUeZmcLST4jNouHY
+Content-Type: application/json
+
+{
+  "status": "RESOLVED"
+}
+
+### Final Redis invalidation test
+GET http://localhost:8080/api/workloads
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHB1bHNlZGVzay5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTI5OTYxOCwiZXhwIjoxNzkxMzAzMjE4fQ.cm4FpAT33OEuzL_MC2mF4wGawEniUeZmcLST4jNouHY
+
+### Register frontend demo user
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Demo User",
+  "email": "demo@pulsedesk.com",
+  "password": "Demo@123"
+}

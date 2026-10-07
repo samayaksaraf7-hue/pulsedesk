@@ -6,6 +6,7 @@ import com.pulsedesk.entity.User;
 import com.pulsedesk.exception.IssueNotFoundException;
 import com.pulsedesk.repository.IssueRepository;
 import com.pulsedesk.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -17,19 +18,23 @@ import java.util.List;
 public class AssignmentService {
 
     private static final int MAX_CAPACITY_HOURS = 40;
+    private static final String TOPIC = "pulsedesk.issue-events";
 
     private final IssueRepository issueRepository;
     private final UserRepository userRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final boolean kafkaEnabled;
 
     public AssignmentService(
             IssueRepository issueRepository,
             UserRepository userRepository,
-            KafkaTemplate<String, String> kafkaTemplate) {
+            KafkaTemplate<String, String> kafkaTemplate,
+            @Value("${KAFKA_ENABLED:true}") boolean kafkaEnabled) {
 
         this.issueRepository = issueRepository;
         this.userRepository = userRepository;
         this.kafkaTemplate = kafkaTemplate;
+        this.kafkaEnabled = kafkaEnabled;
     }
 
     @Transactional
@@ -94,11 +99,34 @@ public class AssignmentService {
                         + ", assignedUserName=" + selectedUser.getName()
                         + ", workloadHours=" + newWorkload;
 
-        kafkaTemplate.send(
-                "pulsedesk.issue-events",
-                String.valueOf(issue.getId()),
-                eventMessage
-        );
+        // Kafka remains enabled locally.
+        // Railway can disable publishing with KAFKA_ENABLED=false.
+        if (kafkaEnabled) {
+            try {
+                kafkaTemplate.send(
+                        TOPIC,
+                        String.valueOf(issue.getId()),
+                        eventMessage
+                ).whenComplete((result, exception) -> {
+                    if (exception != null) {
+                        System.err.println(
+                                "Kafka unavailable - assignment event skipped: "
+                                        + exception.getMessage()
+                        );
+                    }
+                });
+            } catch (Exception exception) {
+                System.err.println(
+                        "Kafka unavailable - assignment event skipped: "
+                                + exception.getMessage()
+                );
+            }
+        } else {
+            System.out.println(
+                    "Kafka disabled - assignment event skipped for issue: "
+                            + issue.getId()
+            );
+        }
 
         AssignmentResponse response =
                 new AssignmentResponse();

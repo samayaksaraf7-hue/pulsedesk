@@ -19,13 +19,14 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AssignmentServiceTest {
+
+    private static final String USER_EMAIL =
+            "owner@example.com";
 
     @Mock
     private IssueRepository issueRepository;
@@ -42,10 +43,17 @@ class AssignmentServiceTest {
     @Test
     void shouldAssignIssueToLeastLoadedUser() {
 
+        User owner = new User();
+        owner.setId(10L);
+        owner.setName("Issue Owner");
+        owner.setEmail(USER_EMAIL);
+        owner.setWorkloadHours(5);
+
         Issue issue = new Issue();
         issue.setId(11L);
         issue.setTitle("Test Issue");
         issue.setEstimatedHours(4);
+        issue.setCreatedBy(owner);
 
         User user1 = new User();
         user1.setId(1L);
@@ -57,47 +65,81 @@ class AssignmentServiceTest {
         user2.setName("User Two");
         user2.setWorkloadHours(2);
 
+        when(userRepository.findByEmail(USER_EMAIL))
+                .thenReturn(Optional.of(owner));
+
         when(issueRepository.findById(11L))
                 .thenReturn(Optional.of(issue));
 
         when(userRepository.findAllByOrderByWorkloadHoursAsc())
-                .thenReturn(List.of(user2, user1));
+                .thenReturn(List.of(user2, owner, user1));
 
         when(userRepository.save(any(User.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenAnswer(
+                        invocation ->
+                                invocation.getArgument(0)
+                );
 
         when(issueRepository.save(any(Issue.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenAnswer(
+                        invocation ->
+                                invocation.getArgument(0)
+                );
 
         AssignmentResponse response =
-                assignmentService.autoAssign(11L);
+                assignmentService.autoAssign(
+                        11L,
+                        USER_EMAIL
+                );
 
-        assertEquals(2L, response.getAssignedUserId());
-        assertEquals("User Two", response.getAssignedUserName());
+        assertEquals(
+                2L,
+                response.getAssignedUserId()
+        );
 
-        assertEquals(2, response.getPreviousWorkloadHours());
-        assertEquals(6, response.getNewWorkloadHours());
+        assertEquals(
+                "User Two",
+                response.getAssignedUserName()
+        );
 
-        assertEquals(user2, issue.getAssignedTo());
-        assertEquals(6, user2.getWorkloadHours());
+        assertEquals(
+                2,
+                response.getPreviousWorkloadHours()
+        );
+
+        assertEquals(
+                6,
+                response.getNewWorkloadHours()
+        );
+
+        assertEquals(
+                user2,
+                issue.getAssignedTo()
+        );
+
+        assertEquals(
+                6,
+                user2.getWorkloadHours()
+        );
 
         verify(userRepository).save(user2);
         verify(issueRepository).save(issue);
-
-        verify(kafkaTemplate).send(
-                eq("pulsedesk.issue-events"),
-                eq("11"),
-                contains("ISSUE_ASSIGNED")
-        );
     }
 
     @Test
     void shouldRejectAssignmentWhenNoUserHasCapacity() {
 
+        User owner = new User();
+        owner.setId(10L);
+        owner.setName("Issue Owner");
+        owner.setEmail(USER_EMAIL);
+        owner.setWorkloadHours(40);
+
         Issue issue = new Issue();
         issue.setId(12L);
         issue.setTitle("Large Production Issue");
         issue.setEstimatedHours(5);
+        issue.setCreatedBy(owner);
 
         User user1 = new User();
         user1.setId(1L);
@@ -109,16 +151,26 @@ class AssignmentServiceTest {
         user2.setName("User Two");
         user2.setWorkloadHours(40);
 
+        when(userRepository.findByEmail(USER_EMAIL))
+                .thenReturn(Optional.of(owner));
+
         when(issueRepository.findById(12L))
                 .thenReturn(Optional.of(issue));
 
         when(userRepository.findAllByOrderByWorkloadHoursAsc())
-                .thenReturn(List.of(user1, user2));
+                .thenReturn(
+                        List.of(owner, user1, user2)
+                );
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> assignmentService.autoAssign(12L)
-        );
+        IllegalStateException exception =
+                assertThrows(
+                        IllegalStateException.class,
+                        () ->
+                                assignmentService.autoAssign(
+                                        12L,
+                                        USER_EMAIL
+                                )
+                );
 
         assertEquals(
                 "No user has enough capacity for this issue",

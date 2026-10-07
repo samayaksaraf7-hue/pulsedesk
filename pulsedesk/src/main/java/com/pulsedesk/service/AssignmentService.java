@@ -18,33 +18,56 @@ import java.util.List;
 public class AssignmentService {
 
     private static final int MAX_CAPACITY_HOURS = 40;
-    private static final String TOPIC = "pulsedesk.issue-events";
 
     private final IssueRepository issueRepository;
     private final UserRepository userRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final boolean kafkaEnabled;
+
+    @Value("${app.kafka.enabled:true}")
+    private boolean kafkaEnabled;
 
     public AssignmentService(
             IssueRepository issueRepository,
             UserRepository userRepository,
-            KafkaTemplate<String, String> kafkaTemplate,
-            @Value("${KAFKA_ENABLED:true}") boolean kafkaEnabled) {
+            KafkaTemplate<String, String> kafkaTemplate) {
 
         this.issueRepository = issueRepository;
         this.userRepository = userRepository;
         this.kafkaTemplate = kafkaTemplate;
-        this.kafkaEnabled = kafkaEnabled;
     }
 
     @Transactional
     @CacheEvict(value = "workloads", allEntries = true)
-    public AssignmentResponse autoAssign(Long issueId) {
+    public AssignmentResponse autoAssign(
+            Long issueId,
+            String userEmail) {
 
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() ->
-                        new IssueNotFoundException(issueId)
-                );
+        User currentUser =
+                userRepository.findByEmail(userEmail)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "User not found"
+                                )
+                        );
+
+        Issue issue =
+                issueRepository.findById(issueId)
+                        .orElseThrow(() ->
+                                new IssueNotFoundException(issueId)
+                        );
+
+        /*
+         * SECURITY:
+         * Only the user who created the incident
+         * can auto-assign it.
+         */
+        if (issue.getCreatedBy() == null
+                || !issue.getCreatedBy()
+                .getId()
+                .equals(currentUser.getId())) {
+
+            throw new IssueNotFoundException(issueId);
+        }
 
         if (issue.getAssignedTo() != null) {
             throw new IllegalStateException(
@@ -58,25 +81,27 @@ public class AssignmentService {
                         : 1;
 
         List<User> users =
-                userRepository.findAllByOrderByWorkloadHoursAsc();
+                userRepository
+                        .findAllByOrderByWorkloadHoursAsc();
 
-        User selectedUser = users.stream()
-                .filter(user -> {
+        User selectedUser =
+                users.stream()
+                        .filter(user -> {
 
-                    int currentWorkload =
-                            user.getWorkloadHours() != null
-                                    ? user.getWorkloadHours()
-                                    : 0;
+                            int currentWorkload =
+                                    user.getWorkloadHours() != null
+                                            ? user.getWorkloadHours()
+                                            : 0;
 
-                    return currentWorkload + issueHours
-                            <= MAX_CAPACITY_HOURS;
-                })
-                .findFirst()
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "No user has enough capacity for this issue"
-                        )
-                );
+                            return currentWorkload + issueHours
+                                    <= MAX_CAPACITY_HOURS;
+                        })
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "No user has enough capacity for this issue"
+                                )
+                        );
 
         int previousWorkload =
                 selectedUser.getWorkloadHours() != null
@@ -95,37 +120,40 @@ public class AssignmentService {
         String eventMessage =
                 "issueId=" + issue.getId()
                         + ", eventType=ISSUE_ASSIGNED"
-                        + ", assignedUserId=" + selectedUser.getId()
-                        + ", assignedUserName=" + selectedUser.getName()
-                        + ", workloadHours=" + newWorkload;
+                        + ", assignedUserId="
+                        + selectedUser.getId()
+                        + ", assignedUserName="
+                        + selectedUser.getName()
+                        + ", workloadHours="
+                        + newWorkload;
 
-        // Kafka remains enabled locally.
-        // Railway can disable publishing with KAFKA_ENABLED=false.
+        /*
+         * Kafka is enabled locally.
+         * Railway can disable it using
+         * APP_KAFKA_ENABLED=false.
+         */
         if (kafkaEnabled) {
             try {
                 kafkaTemplate.send(
-                        TOPIC,
+                        "pulsedesk.issue-events",
                         String.valueOf(issue.getId()),
                         eventMessage
-                ).whenComplete((result, exception) -> {
-                    if (exception != null) {
-                        System.err.println(
-                                "Kafka unavailable - assignment event skipped: "
-                                        + exception.getMessage()
-                        );
-                    }
-                });
+                ).whenComplete(
+                        (result, exception) -> {
+                            if (exception != null) {
+                                System.err.println(
+                                        "Kafka unavailable - assignment event skipped: "
+                                                + exception.getMessage()
+                                );
+                            }
+                        }
+                );
             } catch (Exception exception) {
                 System.err.println(
                         "Kafka unavailable - assignment event skipped: "
                                 + exception.getMessage()
                 );
             }
-        } else {
-            System.out.println(
-                    "Kafka disabled - assignment event skipped for issue: "
-                            + issue.getId()
-            );
         }
 
         AssignmentResponse response =
@@ -133,10 +161,22 @@ public class AssignmentService {
 
         response.setIssueId(issue.getId());
         response.setIssueTitle(issue.getTitle());
-        response.setAssignedUserId(selectedUser.getId());
-        response.setAssignedUserName(selectedUser.getName());
-        response.setPreviousWorkloadHours(previousWorkload);
-        response.setNewWorkloadHours(newWorkload);
+
+        response.setAssignedUserId(
+                selectedUser.getId()
+        );
+
+        response.setAssignedUserName(
+                selectedUser.getName()
+        );
+
+        response.setPreviousWorkloadHours(
+                previousWorkload
+        );
+
+        response.setNewWorkloadHours(
+                newWorkload
+        );
 
         response.setMessage(
                 "Issue assigned to least-loaded user with available capacity"

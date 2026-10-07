@@ -22,7 +22,7 @@ public class IssueController {
         this.issueService = issueService;
     }
 
-    // Create a new issue
+    // Create a new issue for the logged-in user
     @PostMapping
     public ResponseEntity<IssueResponse> createIssue(
             @Valid @RequestBody CreateIssueRequest request,
@@ -39,35 +39,47 @@ public class IssueController {
                 .body(response);
     }
 
-    // Get all issues
+    // Get only issues created by the logged-in user
     @GetMapping
-    public ResponseEntity<List<IssueResponse>> getAllIssues() {
+    public ResponseEntity<List<IssueResponse>> getAllIssues(
+            Authentication authentication) {
 
         List<IssueResponse> issues =
-                issueService.getAllIssues();
+                issueService.getIssuesForUser(
+                        authentication.getName()
+                );
 
         return ResponseEntity.ok(issues);
     }
 
-    // Get one issue by ID
+    // Get one issue only if it belongs to the logged-in user
     @GetMapping("/{id}")
     public ResponseEntity<IssueResponse> getIssueById(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Authentication authentication) {
 
         IssueResponse issue =
-                issueService.getIssueById(id);
+                issueService.getIssueByIdForUser(
+                        id,
+                        authentication.getName()
+                );
 
         return ResponseEntity.ok(issue);
     }
 
-    // Update issue status
+    // Update status only if the issue belongs to the logged-in user
     @PatchMapping("/{id}/status")
     public ResponseEntity<IssueResponse> updateIssueStatus(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateIssueStatusRequest request) {
+            @Valid @RequestBody UpdateIssueStatusRequest request,
+            Authentication authentication) {
 
         IssueResponse issue =
-                issueService.updateIssueStatus(id, request);
+                issueService.updateIssueStatus(
+                        id,
+                        request,
+                        authentication.getName()
+                );
 
         return ResponseEntity.ok(issue);
     }

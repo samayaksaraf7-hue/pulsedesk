@@ -29,6 +29,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class IssueServiceTest {
 
+    private static final String USER_EMAIL =
+            "test@example.com";
+
     @Mock
     private IssueRepository issueRepository;
 
@@ -47,29 +50,31 @@ class IssueServiceTest {
     @Test
     void shouldCreateIssueWithCalculatedPriority() {
 
-        // Create user
         User creator = new User();
         creator.setId(1L);
         creator.setName("Test User");
+        creator.setEmail(USER_EMAIL);
 
-        // Create request
-        CreateIssueRequest request = new CreateIssueRequest();
+        CreateIssueRequest request =
+                new CreateIssueRequest();
 
-        request.setTitle("Production Server Down");
+        request.setTitle(
+                "Production Server Down"
+        );
+
         request.setDescription(
                 "Main production server is unavailable"
         );
+
         request.setImpact(5);
         request.setUrgency(5);
         request.setAffectedUsers(150);
         request.setDeadline(LocalDate.now());
         request.setEstimatedHours(4);
 
-        // Mock user lookup
-        when(userRepository.findByEmail("test@example.com"))
+        when(userRepository.findByEmail(USER_EMAIL))
                 .thenReturn(Optional.of(creator));
 
-        // Mock priority calculation
         when(priorityEngine.calculate(
                 5,
                 5,
@@ -77,30 +82,34 @@ class IssueServiceTest {
                 request.getDeadline(),
                 4
         )).thenReturn(
-                new PriorityResult(100, "CRITICAL")
+                new PriorityResult(
+                        100,
+                        "CRITICAL"
+                )
         );
 
-        // Mock issue save
-        when(issueRepository.save(any(Issue.class)))
-                .thenAnswer(invocation -> {
+        when(issueRepository.save(
+                any(Issue.class)
+        )).thenAnswer(invocation -> {
 
-                    Issue issue =
-                            invocation.getArgument(0);
+            Issue issue =
+                    invocation.getArgument(0);
 
-                    issue.setId(11L);
+            issue.setId(11L);
 
-                    return issue;
-                });
+            return issue;
+        });
 
-        // Run service
         IssueResponse response =
                 issueService.createIssue(
                         request,
-                        "test@example.com"
+                        USER_EMAIL
                 );
 
-        // Verify response
-        assertEquals(11L, response.getId());
+        assertEquals(
+                11L,
+                response.getId()
+        );
 
         assertEquals(
                 "Production Server Down",
@@ -132,11 +141,9 @@ class IssueServiceTest {
                 response.getCreatedByName()
         );
 
-        // Verify database save
         verify(issueRepository)
                 .save(any(Issue.class));
 
-        // Verify Kafka event
         verify(issueEventProducer)
                 .publish(any());
     }
@@ -144,18 +151,18 @@ class IssueServiceTest {
     @Test
     void shouldReleaseWorkloadWhenIssueResolved() {
 
-        // Creator
         User creator = new User();
         creator.setId(1L);
         creator.setName("Test User");
+        creator.setEmail(USER_EMAIL);
 
-        // Assigned developer currently has 10 hours
         User assignedUser = new User();
         assignedUser.setId(2L);
-        assignedUser.setName("Rahul Developer");
+        assignedUser.setName(
+                "Rahul Developer"
+        );
         assignedUser.setWorkloadHours(10);
 
-        // Issue requires 4 hours
         Issue issue = new Issue();
         issue.setId(12L);
         issue.setTitle("Production Bug");
@@ -165,53 +172,60 @@ class IssueServiceTest {
         issue.setEstimatedHours(4);
         issue.setPriorityScore(80);
         issue.setPriorityLevel("HIGH");
-        issue.setStatus(IssueStatus.IN_PROGRESS);
+        issue.setStatus(
+                IssueStatus.IN_PROGRESS
+        );
         issue.setCreatedBy(creator);
         issue.setAssignedTo(assignedUser);
 
-        // Request changes status to RESOLVED
         UpdateIssueStatusRequest request =
                 new UpdateIssueStatusRequest();
 
-        request.setStatus(IssueStatus.RESOLVED);
+        request.setStatus(
+                IssueStatus.RESOLVED
+        );
 
-        // Mock issue lookup
+        /*
+         * New ownership check:
+         * authenticated email -> current user.
+         */
+        when(userRepository.findByEmail(USER_EMAIL))
+                .thenReturn(Optional.of(creator));
+
         when(issueRepository.findById(12L))
                 .thenReturn(Optional.of(issue));
 
-        // Mock user save
-        when(userRepository.save(any(User.class)))
-                .thenAnswer(invocation ->
+        when(userRepository.save(
+                any(User.class)
+        )).thenAnswer(
+                invocation ->
                         invocation.getArgument(0)
-                );
+        );
 
-        // Mock issue save
-        when(issueRepository.save(any(Issue.class)))
-                .thenAnswer(invocation ->
+        when(issueRepository.save(
+                any(Issue.class)
+        )).thenAnswer(
+                invocation ->
                         invocation.getArgument(0)
-                );
+        );
 
-        // Run service
         IssueResponse response =
                 issueService.updateIssueStatus(
                         12L,
-                        request
+                        request,
+                        USER_EMAIL
                 );
 
-        // Workload should change:
-        // 10 current hours - 4 issue hours = 6
         assertEquals(
                 6,
                 assignedUser.getWorkloadHours()
         );
 
-        // Issue should now be RESOLVED
         assertEquals(
                 IssueStatus.RESOLVED,
                 response.getStatus()
         );
 
-        // Assigned user should remain the same
         assertEquals(
                 2L,
                 response.getAssignedToId()
@@ -222,15 +236,12 @@ class IssueServiceTest {
                 response.getAssignedToName()
         );
 
-        // Verify updated user saved
         verify(userRepository)
                 .save(assignedUser);
 
-        // Verify updated issue saved
         verify(issueRepository)
                 .save(issue);
 
-        // Verify Kafka resolved event published
         verify(issueEventProducer)
                 .publish(any());
     }

@@ -44,10 +44,7 @@ public class IssueService {
             CreateIssueRequest request,
             String userEmail) {
 
-        User creator = userRepository.findByEmail(userEmail)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("User not found")
-                );
+        User creator = getUserByEmail(userEmail);
 
         int affectedUsers =
                 request.getAffectedUsers() != null
@@ -86,7 +83,6 @@ public class IssueService {
 
         Issue savedIssue = issueRepository.save(issue);
 
-        // Publish ISSUE_CREATED event to Kafka
         IssueEvent createdEvent = new IssueEvent(
                 savedIssue.getId(),
                 "ISSUE_CREATED",
@@ -98,36 +94,59 @@ public class IssueService {
         return toResponse(savedIssue);
     }
 
+    /*
+     * Return only incidents created by
+     * the currently authenticated user.
+     */
     @Transactional(readOnly = true)
-    public List<IssueResponse> getAllIssues() {
+    public List<IssueResponse> getIssuesForUser(
+            String userEmail) {
 
-        return issueRepository.findAll()
+        User user = getUserByEmail(userEmail);
+
+        return issueRepository
+                .findByCreatedBy_Id(user.getId())
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
+    /*
+     * Return an incident only when it belongs
+     * to the currently authenticated user.
+     */
     @Transactional(readOnly = true)
-    public IssueResponse getIssueById(Long id) {
+    public IssueResponse getIssueByIdForUser(
+            Long id,
+            String userEmail) {
 
-        Issue issue = issueRepository.findById(id)
-                .orElseThrow(() ->
-                        new IssueNotFoundException(id)
-                );
+        User user = getUserByEmail(userEmail);
+
+        Issue issue = getOwnedIssue(
+                id,
+                user.getId()
+        );
 
         return toResponse(issue);
     }
 
+    /*
+     * Update status only when the incident
+     * belongs to the authenticated user.
+     */
     @Transactional
     @CacheEvict(value = "workloads", allEntries = true)
     public IssueResponse updateIssueStatus(
             Long id,
-            UpdateIssueStatusRequest request) {
+            UpdateIssueStatusRequest request,
+            String userEmail) {
 
-        Issue issue = issueRepository.findById(id)
-                .orElseThrow(() ->
-                        new IssueNotFoundException(id)
-                );
+        User user = getUserByEmail(userEmail);
+
+        Issue issue = getOwnedIssue(
+                id,
+                user.getId()
+        );
 
         IssueStatus oldStatus = issue.getStatus();
         IssueStatus newStatus = request.getStatus();
@@ -165,44 +184,103 @@ public class IssueService {
 
         issue.setStatus(newStatus);
 
-        Issue updatedIssue = issueRepository.save(issue);
+        Issue updatedIssue =
+                issueRepository.save(issue);
 
-        /*
-         * Publish ISSUE_RESOLVED only when the issue
-         * actually changes to RESOLVED.
-         */
         if (newStatus == IssueStatus.RESOLVED
                 && oldStatus != IssueStatus.RESOLVED) {
 
-            IssueEvent resolvedEvent = new IssueEvent(
-                    updatedIssue.getId(),
-                    "ISSUE_RESOLVED",
-                    "Issue resolved: " + updatedIssue.getTitle()
-            );
+            IssueEvent resolvedEvent =
+                    new IssueEvent(
+                            updatedIssue.getId(),
+                            "ISSUE_RESOLVED",
+                            "Issue resolved: "
+                                    + updatedIssue.getTitle()
+                    );
 
-            issueEventProducer.publish(resolvedEvent);
+            issueEventProducer.publish(
+                    resolvedEvent
+            );
         }
 
         return toResponse(updatedIssue);
     }
 
+    /*
+     * Find authenticated application user.
+     */
+    private User getUserByEmail(String email) {
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "User not found"
+                        )
+                );
+    }
+
+    /*
+     * Ownership check.
+     *
+     * We intentionally return IssueNotFoundException
+     * when another user attempts to access the issue.
+     * This avoids exposing whether another user's
+     * incident ID exists.
+     */
+    private Issue getOwnedIssue(
+            Long issueId,
+            Long userId) {
+
+        Issue issue =
+                issueRepository.findById(issueId)
+                        .orElseThrow(() ->
+                                new IssueNotFoundException(
+                                        issueId
+                                )
+                        );
+
+        if (issue.getCreatedBy() == null
+                || !issue.getCreatedBy()
+                .getId()
+                .equals(userId)) {
+
+            throw new IssueNotFoundException(
+                    issueId
+            );
+        }
+
+        return issue;
+    }
+
     private IssueResponse toResponse(Issue issue) {
 
-        IssueResponse response = new IssueResponse();
+        IssueResponse response =
+                new IssueResponse();
 
         response.setId(issue.getId());
         response.setTitle(issue.getTitle());
-        response.setDescription(issue.getDescription());
+        response.setDescription(
+                issue.getDescription()
+        );
 
         response.setImpact(issue.getImpact());
         response.setUrgency(issue.getUrgency());
-        response.setAffectedUsers(issue.getAffectedUsers());
+        response.setAffectedUsers(
+                issue.getAffectedUsers()
+        );
 
         response.setDeadline(issue.getDeadline());
-        response.setEstimatedHours(issue.getEstimatedHours());
+        response.setEstimatedHours(
+                issue.getEstimatedHours()
+        );
 
-        response.setPriorityScore(issue.getPriorityScore());
-        response.setPriorityLevel(issue.getPriorityLevel());
+        response.setPriorityScore(
+                issue.getPriorityScore()
+        );
+
+        response.setPriorityLevel(
+                issue.getPriorityLevel()
+        );
 
         response.setStatus(issue.getStatus());
 
@@ -225,8 +303,13 @@ public class IssueService {
             );
         }
 
-        response.setCreatedAt(issue.getCreatedAt());
-        response.setUpdatedAt(issue.getUpdatedAt());
+        response.setCreatedAt(
+                issue.getCreatedAt()
+        );
+
+        response.setUpdatedAt(
+                issue.getUpdatedAt()
+        );
 
         return response;
     }

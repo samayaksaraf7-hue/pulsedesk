@@ -66,9 +66,12 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        // Allow React Vite frontend
+        // Allow local frontend and deployed Railway frontend
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173")
+                List.of(
+                        "http://localhost:5173",
+                        "https://artistic-mercy-production-15d3.up.railway.app"
+                )
         );
 
         // HTTP methods frontend can use
@@ -112,7 +115,7 @@ public class SecurityConfig {
             throws Exception {
 
         http
-                // Enable our CORS configuration
+                // Enable CORS configuration
                 .cors(cors -> cors.configurationSource(
                         corsConfigurationSource()
                 ))
@@ -120,7 +123,7 @@ public class SecurityConfig {
                 // JWT REST API does not use CSRF sessions
                 .csrf(csrf -> csrf.disable())
 
-                // JWT = stateless authentication
+                // JWT uses stateless authentication
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS

@@ -13,7 +13,8 @@ function App() {
   const [confirmPassword, setConfirmPassword] =
       useState("");
 
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] =
+      useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -50,6 +51,44 @@ function App() {
   };
 
   /*
+   * EXTRACT API ERROR MESSAGE
+   */
+  const getErrorMessage = (data, fallback) => {
+    if (!data) {
+      return fallback;
+    }
+
+    if (
+        typeof data.message === "string" &&
+        data.message.trim()
+    ) {
+      return data.message;
+    }
+
+    if (
+        typeof data.error === "string" &&
+        data.error.trim()
+    ) {
+      return data.error;
+    }
+
+    if (
+        data.errors &&
+        typeof data.errors === "object"
+    ) {
+      const messages = Object.values(
+          data.errors
+      );
+
+      if (messages.length > 0) {
+        return messages.join(" ");
+      }
+    }
+
+    return fallback;
+  };
+
+  /*
    * LOGIN
    */
   const handleLogin = async (event) => {
@@ -57,7 +96,10 @@ function App() {
 
     setError("");
 
-    if (!email.trim() || !password.trim()) {
+    const cleanEmail =
+        email.trim().toLowerCase();
+
+    if (!cleanEmail || !password) {
       setError(
           "Please enter your email and password."
       );
@@ -77,7 +119,7 @@ function App() {
             },
 
             body: JSON.stringify({
-              email: email.trim(),
+              email: cleanEmail,
               password: password,
             }),
           }
@@ -93,9 +135,10 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-            data.message ||
-            data.error ||
-            "Invalid email or password."
+            getErrorMessage(
+                data,
+                "Invalid email or password."
+            )
         );
       }
 
@@ -114,7 +157,10 @@ function App() {
 
       setIsLoggedIn(true);
     } catch (err) {
-      console.error("Login error:", err);
+      console.error(
+          "Login error:",
+          err
+      );
 
       setError(
           err.message ||
@@ -133,20 +179,74 @@ function App() {
 
     setError("");
 
+    const cleanName = name.trim();
+    const cleanEmail =
+        email.trim().toLowerCase();
+
     if (
-        !name.trim() ||
-        !email.trim() ||
-        !password.trim()
+        !cleanName ||
+        !cleanEmail ||
+        !password ||
+        !confirmPassword
     ) {
       setError(
-          "Please enter your name, email and password."
+          "Please complete all registration fields."
       );
       return;
     }
 
-    if (password.length < 8) {
+    /*
+     * NAME VALIDATION
+     */
+    if (
+        cleanName.length < 2 ||
+        cleanName.length > 50
+    ) {
       setError(
-          "Password must be at least 8 characters."
+          "Name must be between 2 and 50 characters."
+      );
+      return;
+    }
+
+    const namePattern =
+        /^[\p{L}][\p{L} .'-]*$/u;
+
+    if (!namePattern.test(cleanName)) {
+      setError(
+          "Name can contain only letters, spaces, apostrophes, hyphens and periods."
+      );
+      return;
+    }
+
+    /*
+     * EMAIL VALIDATION
+     */
+    const emailPattern =
+        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    if (!emailPattern.test(cleanEmail)) {
+      setError(
+          "Enter a valid email address."
+      );
+      return;
+    }
+
+    if (cleanEmail.length > 100) {
+      setError(
+          "Email must not exceed 100 characters."
+      );
+      return;
+    }
+
+    /*
+     * PASSWORD VALIDATION
+     */
+    if (
+        password.length < 8 ||
+        password.length > 100
+    ) {
+      setError(
+          "Password must be between 8 and 100 characters."
       );
       return;
     }
@@ -171,8 +271,8 @@ function App() {
             },
 
             body: JSON.stringify({
-              name: name.trim(),
-              email: email.trim(),
+              name: cleanName,
+              email: cleanEmail,
               password: password,
             }),
           }
@@ -188,9 +288,10 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-            data.message ||
-            data.error ||
-            "Unable to create account."
+            getErrorMessage(
+                data,
+                "Unable to create account."
+            )
         );
       }
 
@@ -209,7 +310,10 @@ function App() {
 
       setIsLoggedIn(true);
     } catch (err) {
-      console.error("Registration error:", err);
+      console.error(
+          "Registration error:",
+          err
+      );
 
       setError(
           err.message ||
@@ -235,8 +339,13 @@ function App() {
    * LOGOUT
    */
   const handleLogout = () => {
-    localStorage.removeItem("pulsedesk_token");
-    sessionStorage.removeItem("pulsedesk_token");
+    localStorage.removeItem(
+        "pulsedesk_token"
+    );
+
+    sessionStorage.removeItem(
+        "pulsedesk_token"
+    );
 
     setName("");
     setEmail("");
@@ -369,8 +478,6 @@ function App() {
                   : "Join PulseDesk and start managing incidents"}
             </p>
 
-            {/* AUTH MODE BUTTONS */}
-
             <div className="auth-switch">
 
               <button
@@ -411,9 +518,8 @@ function App() {
                       ? handleLogin
                       : handleRegister
                 }
+                noValidate
             >
-
-              {/* NAME - REGISTER ONLY */}
 
               {authMode === "register" && (
                   <>
@@ -423,9 +529,7 @@ function App() {
 
                     <div className="input-wrapper">
 
-                      <span>
-                        👤
-                      </span>
+                      <span>👤</span>
 
                       <input
                           id="name"
@@ -438,6 +542,7 @@ function App() {
                               )
                           }
                           autoComplete="name"
+                          maxLength={50}
                           disabled={loading}
                       />
 
@@ -445,17 +550,13 @@ function App() {
                   </>
               )}
 
-              {/* EMAIL */}
-
               <label htmlFor="email">
                 Email address
               </label>
 
               <div className="input-wrapper">
 
-                <span>
-                  ✉️
-                </span>
+                <span>✉️</span>
 
                 <input
                     id="email"
@@ -468,12 +569,11 @@ function App() {
                         )
                     }
                     autoComplete="email"
+                    maxLength={100}
                     disabled={loading}
                 />
 
               </div>
-
-              {/* PASSWORD */}
 
               <label htmlFor="password">
                 Password
@@ -481,9 +581,7 @@ function App() {
 
               <div className="input-wrapper">
 
-                <span>
-                  ⌁
-                </span>
+                <span>⌁</span>
 
                 <input
                     id="password"
@@ -509,8 +607,6 @@ function App() {
 
               </div>
 
-              {/* CONFIRM PASSWORD */}
-
               {authMode === "register" && (
                   <>
                     <label htmlFor="confirmPassword">
@@ -519,9 +615,7 @@ function App() {
 
                     <div className="input-wrapper">
 
-                      <span>
-                        ✓
-                      </span>
+                      <span>✓</span>
 
                       <input
                           id="confirmPassword"
@@ -541,15 +635,11 @@ function App() {
                   </>
               )}
 
-              {/* ERROR */}
-
               {error && (
                   <div className="login-error">
                     ⚠️ {error}
                   </div>
               )}
-
-              {/* LOGIN OPTIONS */}
 
               {authMode === "login" && (
                   <div className="form-options">
@@ -573,8 +663,6 @@ function App() {
                   </div>
               )}
 
-              {/* SUBMIT */}
-
               <button
                   className="login-button"
                   type="submit"
@@ -591,9 +679,7 @@ function App() {
                 }
 
                 {!loading && (
-                    <span>
-                      →
-                    </span>
+                    <span>→</span>
                 )}
 
               </button>
@@ -601,13 +687,8 @@ function App() {
             </form>
 
             <div className="secure-message">
-
-              <span>
-                ◆
-              </span>
-
+              <span>◆</span>
               Secured with JWT authentication
-
             </div>
 
           </section>

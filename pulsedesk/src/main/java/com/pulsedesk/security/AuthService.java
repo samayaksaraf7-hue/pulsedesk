@@ -10,6 +10,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class AuthService {
 
@@ -32,19 +34,32 @@ public class AuthService {
 
     public String register(RegisterRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail =
+                request.getEmail()
+                        .trim()
+                        .toLowerCase(Locale.ROOT);
+
+        String normalizedName =
+                request.getName().trim();
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
+
             throw new IllegalArgumentException(
-                    "Email already registered"
+                    "An account with this email already exists"
             );
         }
 
         User user = new User();
 
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
+        user.setName(normalizedName);
+        user.setEmail(normalizedEmail);
+
         user.setPassword(
-                passwordEncoder.encode(request.getPassword())
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
         );
+
         user.setRole("USER");
 
         userRepository.save(user);
@@ -57,15 +72,25 @@ public class AuthService {
 
     public String login(LoginRequest request) {
 
+        String normalizedEmail =
+                request.getEmail()
+                        .trim()
+                        .toLowerCase(Locale.ROOT);
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
+                        normalizedEmail,
                         request.getPassword()
                 )
         );
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow();
+        User user =
+                userRepository.findByEmail(normalizedEmail)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Invalid email or password"
+                                )
+                        );
 
         return jwtService.generateToken(
                 user.getEmail(),

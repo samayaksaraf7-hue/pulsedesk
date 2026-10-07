@@ -5,8 +5,14 @@ import "./App.css";
 const API_URL = import.meta.env.VITE_API_URL;
 
 function App() {
+  const [authMode, setAuthMode] = useState("login");
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] =
+      useState("");
+
   const [rememberMe, setRememberMe] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -18,13 +24,43 @@ function App() {
           !!sessionStorage.getItem("pulsedesk_token")
   );
 
+  /*
+   * STORE JWT TOKEN
+   */
+  const saveToken = (token) => {
+    if (rememberMe) {
+      localStorage.setItem(
+          "pulsedesk_token",
+          token
+      );
+
+      sessionStorage.removeItem(
+          "pulsedesk_token"
+      );
+    } else {
+      sessionStorage.setItem(
+          "pulsedesk_token",
+          token
+      );
+
+      localStorage.removeItem(
+          "pulsedesk_token"
+      );
+    }
+  };
+
+  /*
+   * LOGIN
+   */
   const handleLogin = async (event) => {
     event.preventDefault();
 
     setError("");
 
     if (!email.trim() || !password.trim()) {
-      setError("Please enter your email and password.");
+      setError(
+          "Please enter your email and password."
+      );
       return;
     }
 
@@ -74,25 +110,7 @@ function App() {
         );
       }
 
-      if (rememberMe) {
-        localStorage.setItem(
-            "pulsedesk_token",
-            token
-        );
-
-        sessionStorage.removeItem(
-            "pulsedesk_token"
-        );
-      } else {
-        sessionStorage.setItem(
-            "pulsedesk_token",
-            token
-        );
-
-        localStorage.removeItem(
-            "pulsedesk_token"
-        );
-      }
+      saveToken(token);
 
       setIsLoggedIn(true);
     } catch (err) {
@@ -107,20 +125,132 @@ function App() {
     }
   };
 
+  /*
+   * REGISTER
+   */
+  const handleRegister = async (event) => {
+    event.preventDefault();
+
+    setError("");
+
+    if (
+        !name.trim() ||
+        !email.trim() ||
+        !password.trim()
+    ) {
+      setError(
+          "Please enter your name, email and password."
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      setError(
+          "Password must be at least 8 characters."
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError(
+          "Passwords do not match."
+      );
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+          `${API_URL}/api/auth/register`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+              name: name.trim(),
+              email: email.trim(),
+              password: password,
+            }),
+          }
+      );
+
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        // Response did not contain JSON.
+      }
+
+      if (!response.ok) {
+        throw new Error(
+            data.message ||
+            data.error ||
+            "Unable to create account."
+        );
+      }
+
+      const token =
+          data.token ||
+          data.accessToken ||
+          data.jwt;
+
+      if (!token) {
+        throw new Error(
+            "Account created, but no JWT token was returned."
+        );
+      }
+
+      saveToken(token);
+
+      setIsLoggedIn(true);
+    } catch (err) {
+      console.error("Registration error:", err);
+
+      setError(
+          err.message ||
+          "Unable to create your PulseDesk account."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*
+   * CHANGE BETWEEN LOGIN / REGISTER
+   */
+  const switchMode = (mode) => {
+    setAuthMode(mode);
+
+    setError("");
+    setPassword("");
+    setConfirmPassword("");
+  };
+
+  /*
+   * LOGOUT
+   */
   const handleLogout = () => {
     localStorage.removeItem("pulsedesk_token");
     sessionStorage.removeItem("pulsedesk_token");
 
+    setName("");
     setEmail("");
     setPassword("");
+    setConfirmPassword("");
     setRememberMe(false);
     setError("");
+    setAuthMode("login");
 
     setIsLoggedIn(false);
   };
 
   /*
-   * REAL DASHBOARD
+   * DASHBOARD
    */
   if (isLoggedIn) {
     return (
@@ -131,10 +261,11 @@ function App() {
   }
 
   /*
-   * LOGIN PAGE
+   * AUTH PAGE
    */
   return (
       <div className="login-page">
+
         <div className="glow glow-one"></div>
         <div className="glow glow-two"></div>
 
@@ -217,7 +348,7 @@ function App() {
 
           </section>
 
-          {/* LOGIN CARD */}
+          {/* AUTH CARD */}
 
           <section className="login-card">
 
@@ -227,14 +358,92 @@ function App() {
             </div>
 
             <h2>
-              Welcome back
+              {authMode === "login"
+                  ? "Welcome back"
+                  : "Create your account"}
             </h2>
 
             <p className="subtitle">
-              Sign in to your PulseDesk workspace
+              {authMode === "login"
+                  ? "Sign in to your PulseDesk workspace"
+                  : "Join PulseDesk and start managing incidents"}
             </p>
 
-            <form onSubmit={handleLogin}>
+            {/* AUTH MODE BUTTONS */}
+
+            <div className="auth-switch">
+
+              <button
+                  type="button"
+                  className={
+                    authMode === "login"
+                        ? "auth-switch-button active"
+                        : "auth-switch-button"
+                  }
+                  onClick={() =>
+                      switchMode("login")
+                  }
+                  disabled={loading}
+              >
+                Sign In
+              </button>
+
+              <button
+                  type="button"
+                  className={
+                    authMode === "register"
+                        ? "auth-switch-button active"
+                        : "auth-switch-button"
+                  }
+                  onClick={() =>
+                      switchMode("register")
+                  }
+                  disabled={loading}
+              >
+                Create Account
+              </button>
+
+            </div>
+
+            <form
+                onSubmit={
+                  authMode === "login"
+                      ? handleLogin
+                      : handleRegister
+                }
+            >
+
+              {/* NAME - REGISTER ONLY */}
+
+              {authMode === "register" && (
+                  <>
+                    <label htmlFor="name">
+                      Full name
+                    </label>
+
+                    <div className="input-wrapper">
+
+                      <span>
+                        👤
+                      </span>
+
+                      <input
+                          id="name"
+                          type="text"
+                          placeholder="Your full name"
+                          value={name}
+                          onChange={(event) =>
+                              setName(
+                                  event.target.value
+                              )
+                          }
+                          autoComplete="name"
+                          disabled={loading}
+                      />
+
+                    </div>
+                  </>
+              )}
 
               {/* EMAIL */}
 
@@ -254,7 +463,9 @@ function App() {
                     placeholder="you@company.com"
                     value={email}
                     onChange={(event) =>
-                        setEmail(event.target.value)
+                        setEmail(
+                            event.target.value
+                        )
                     }
                     autoComplete="email"
                     disabled={loading}
@@ -277,16 +488,58 @@ function App() {
                 <input
                     id="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder={
+                      authMode === "login"
+                          ? "Enter your password"
+                          : "Minimum 8 characters"
+                    }
                     value={password}
                     onChange={(event) =>
-                        setPassword(event.target.value)
+                        setPassword(
+                            event.target.value
+                        )
                     }
-                    autoComplete="current-password"
+                    autoComplete={
+                      authMode === "login"
+                          ? "current-password"
+                          : "new-password"
+                    }
                     disabled={loading}
                 />
 
               </div>
+
+              {/* CONFIRM PASSWORD */}
+
+              {authMode === "register" && (
+                  <>
+                    <label htmlFor="confirmPassword">
+                      Confirm password
+                    </label>
+
+                    <div className="input-wrapper">
+
+                      <span>
+                        ✓
+                      </span>
+
+                      <input
+                          id="confirmPassword"
+                          type="password"
+                          placeholder="Enter password again"
+                          value={confirmPassword}
+                          onChange={(event) =>
+                              setConfirmPassword(
+                                  event.target.value
+                              )
+                          }
+                          autoComplete="new-password"
+                          disabled={loading}
+                      />
+
+                    </div>
+                  </>
+              )}
 
               {/* ERROR */}
 
@@ -296,36 +549,31 @@ function App() {
                   </div>
               )}
 
-              {/* OPTIONS */}
+              {/* LOGIN OPTIONS */}
 
-              <div className="form-options">
+              {authMode === "login" && (
+                  <div className="form-options">
 
-                <label className="remember">
+                    <label className="remember">
 
-                  <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(event) =>
-                          setRememberMe(
-                              event.target.checked
-                          )
-                      }
-                  />
+                      <input
+                          type="checkbox"
+                          checked={rememberMe}
+                          onChange={(event) =>
+                              setRememberMe(
+                                  event.target.checked
+                              )
+                          }
+                      />
 
-                  Remember me
+                      Remember me
 
-                </label>
+                    </label>
 
-                <button
-                    type="button"
-                    className="forgot"
-                >
-                  Forgot password?
-                </button>
+                  </div>
+              )}
 
-              </div>
-
-              {/* LOGIN BUTTON */}
+              {/* SUBMIT */}
 
               <button
                   className="login-button"
@@ -334,8 +582,12 @@ function App() {
               >
 
                 {loading
-                    ? "Signing in..."
-                    : "Sign in to PulseDesk"
+                    ? authMode === "login"
+                        ? "Signing in..."
+                        : "Creating account..."
+                    : authMode === "login"
+                        ? "Sign in to PulseDesk"
+                        : "Create PulseDesk Account"
                 }
 
                 {!loading && (

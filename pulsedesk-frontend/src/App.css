@@ -2736,3 +2736,323 @@ footer {
     min-width: 0;
   }
 }
+
+/* =========================================================
+   LAPTOP SCREEN HEIGHT FIX
+   ========================================================= */
+
+@media (min-width: 1001px) and (max-height: 800px) {
+
+  .login-page {
+    min-height: 100vh;
+    padding: 20px 6%;
+  }
+
+  .login-container {
+    max-width: 1180px;
+    gap: 60px;
+  }
+
+  .logo {
+    margin-bottom: 22px;
+  }
+
+  .brand-section h1 {
+    font-size: clamp(40px, 4.2vw, 60px);
+    line-height: 1;
+    letter-spacing: -2.5px;
+  }
+
+  .brand-section h1 span {
+    margin-top: 5px;
+  }
+
+  .brand-section > p {
+    margin: 18px 0 22px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .feature-row {
+    gap: 10px;
+  }
+
+  .feature-card {
+    min-height: 100px;
+    padding: 14px;
+  }
+
+  .feature-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+
+  .feature-card strong {
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+
+  .feature-card small {
+    font-size: 9px;
+    line-height: 1.35;
+  }
+
+  .login-card {
+    padding: 25px 30px;
+    border-radius: 22px;
+  }
+
+  .status-badge {
+    margin-bottom: 13px;
+    padding: 6px 10px;
+  }
+
+  .login-card h2 {
+    font-size: 26px;
+  }
+
+  .subtitle {
+    margin: 6px 0 16px;
+    font-size: 12px;
+  }
+
+  .login-card form > label {
+    margin: 10px 0 6px;
+  }
+
+  .input-wrapper {
+    height: 44px;
+  }
+
+  .form-options {
+    margin: 12px 0 15px;
+  }
+
+  .login-button {
+    height: 45px;
+  }
+
+  .secure-message {
+    margin-top: 13px;
+    padding-top: 12px;
+  }
+
+  footer {
+    margin-top: 14px;
+  }
+}
+
+
+/* =========================================================
+   EXTRA SHORT LAPTOP SCREEN FIX
+   ========================================================= */
+
+@media (min-width: 1001px) and (max-height: 680px) {
+
+  .login-page {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .login-container {
+    gap: 50px;
+  }
+
+  .logo {
+    margin-bottom: 15px;
+  }
+
+  .brand-section h1 {
+    font-size: 48px;
+  }
+
+  .brand-section > p {
+    margin: 13px 0 16px;
+    font-size: 12px;
+  }
+
+  .feature-card {
+    min-height: 88px;
+    padding: 11px 13px;
+  }
+
+  .feature-icon {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 6px;
+  }
+
+  .login-card {
+    padding: 20px 27px;
+  }
+
+  .status-badge {
+    margin-bottom: 9px;
+  }
+
+  .subtitle {
+    margin-bottom: 10px;
+  }
+
+  .login-card form > label {
+    margin-top: 7px;
+  }
+
+  .input-wrapper {
+    height: 40px;
+  }
+
+  .form-options {
+    margin: 9px 0 11px;
+  }
+
+  .login-button {
+    height: 42px;
+  }
+
+  .secure-message {
+    margin-top: 9px;
+    padding-top: 9px;
+  }
+
+  footer {
+    margin-top: 8px;
+  }
+}
+
+/* =========================================================
+   FINAL FULL LAPTOP SCREEN FIX
+   ========================================================= */
+
+@media (min-width: 1000px) {
+
+  .login-page {
+    width: 100%;
+    min-height: 100vh;
+    padding: 20px 4%;
+  }
+
+  .login-container {
+    width: 100%;
+    max-width: 1500px;
+    margin: auto;
+
+    grid-template-columns:
+      minmax(0, 1.15fr)
+      minmax(380px, 0.85fr);
+
+    gap: clamp(45px, 6vw, 100px);
+  }
+
+  .brand-section {
+    width: 100%;
+  }
+
+  .brand-section h1 {
+    max-width: 760px;
+    font-size: clamp(46px, 4.6vw, 70px);
+  }
+
+  .brand-section > p {
+    max-width: 650px;
+  }
+
+  .feature-row {
+    width: 100%;
+    max-width: 700px;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 500px;
+    justify-self: center;
+  }
+}
+
+
+/* Short laptop screens */
+
+@media (min-width: 1000px) and (max-height: 800px) {
+
+  .login-page {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .login-container {
+    max-width: 1500px;
+  }
+
+  .logo {
+    margin-bottom: 18px;
+  }
+
+  .brand-section h1 {
+    font-size: clamp(44px, 4.2vw, 62px);
+    line-height: 1;
+  }
+
+  .brand-section > p {
+    margin: 15px 0 18px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .feature-row {
+    gap: 10px;
+  }
+
+  .feature-card {
+    min-height: 95px;
+    padding: 13px;
+  }
+
+  .feature-icon {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 7px;
+  }
+
+  .login-card {
+    padding: 22px 28px;
+  }
+
+  .status-badge {
+    margin-bottom: 10px;
+  }
+
+  .login-card h2 {
+    font-size: 25px;
+  }
+
+  .subtitle {
+    margin: 5px 0 12px;
+  }
+
+  .login-card form > label {
+    margin: 8px 0 5px;
+  }
+
+  .input-wrapper {
+    height: 42px;
+  }
+
+  .form-options {
+    margin: 10px 0 12px;
+  }
+
+  .login-button {
+    height: 43px;
+  }
+
+  .secure-message {
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  footer {
+    margin-top: 10px;
+  }
+}

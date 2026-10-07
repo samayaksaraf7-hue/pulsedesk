@@ -24,10 +24,24 @@ public class IssueEventProducer {
                         + ", message=" + event.getMessage()
                         + ", timestamp=" + event.getTimestamp();
 
-        kafkaTemplate.send(
-                TOPIC,
-                String.valueOf(event.getIssueId()),
-                message
-        );
+        try {
+            kafkaTemplate.send(
+                    TOPIC,
+                    String.valueOf(event.getIssueId()),
+                    message
+            ).whenComplete((result, exception) -> {
+                if (exception != null) {
+                    System.err.println(
+                            "Kafka unavailable - event skipped: "
+                                    + exception.getMessage()
+                    );
+                }
+            });
+        } catch (Exception exception) {
+            System.err.println(
+                    "Kafka unavailable - event skipped: "
+                            + exception.getMessage()
+            );
+        }
     }
 }
